@@ -1,0 +1,41 @@
+{
+  "datasetVersion": "IB-Participation-Explorer-data-v1",
+  "analysisVersion": "Existing IB Underutilization v1 (2026-09-25)",
+  "generatedDate": "2026-09-27",
+  "scope": "950 valid existing IB Diploma Programme schools in the frozen national research universe",
+  "units": {
+    "rates": "percentage points, 0-100",
+    "gaps": "percentage points",
+    "coordinates": "decimal degrees"
+  },
+  "counts": {
+    "schools": 950,
+    "nationalBenchmarks": 950,
+    "stateReadinessBenchmarks": 732,
+    "commonAssessmentBenchmarks": 52,
+    "nationalPeerLinks": 9500,
+    "stateReadinessPeerLinks": 7320,
+    "commonAssessmentPeerLinks": 520
+  },
+  "benchmarkDefinitions": {
+    "national": "Frozen national K=10 structural/locale benchmark; exact charter, adaptive grade configuration, six standardized structural dimensions, 0.5 broad-locale mismatch penalty.",
+    "stateReadiness": "Current frozen-rules K=10 state-local benchmark; same state, exact charter, adaptive grade configuration, six structural dimensions plus within-state readiness z, 0.5 locale penalty; only where supportable.",
+    "commonAssessment": "Strict ACT-family v5 or exact saved Indiana SAT-family pilot benchmark where available; never combined with other views."
+  },
+  "p75Definition": "75th percentile of the ten peer IB participation rates. It is a descriptive peer-achievable benchmark, not a forecast or capacity ceiling.",
+  "equivalentGapDefinition": "max(0, peer P75 - observed participation) × grades 9-12 enrollment. Interpret as an equivalent enrollment difference, not a forecast.",
+  "sourceFiles": {
+    "existing_ib_underutilization_master_v1.csv": {
+      "sha256": "d9746f4a114f5e800dfb35a8dd7d435855fe6231e5e30bc7e17001e7c029b113",
+      "bytes": 1234547
+    },
+    "existing_ib_peer_links_v1.csv": {
+      "sha256": "7788c8f8312f9e45bbc07207787a757f5261d00001703c3ed33e271be08b4ace",
+      "bytes": 2928385
+    },
+    "ib_school_context_v1.csv": {
+      "sha256": "0acaf18ff204a370dccaba3aaef1dc836c4e504be8bf989f2ea827a12178b16d",
+      "bytes": 199688
+    }
+  }
+}
