@@ -1,5 +1,8 @@
 import type { BenchmarkKey, School } from './types'
 
+type DisplayType = 'count' | 'percent' | 'ratio' | 'z'
+type CharacteristicRow = { label: string; target: number | null; peers: number | null; type: DisplayType }
+
 function median(values: Array<number | null | undefined>) {
   const clean = values.filter((value): value is number => Number.isFinite(value)).sort((a, b) => a - b)
   if (!clean.length) return null
@@ -7,7 +10,7 @@ function median(values: Array<number | null | undefined>) {
   return clean.length % 2 ? clean[middle] : (clean[middle - 1] + clean[middle]) / 2
 }
 
-function display(value: number | null, type: 'count' | 'percent' | 'ratio' | 'z') {
+function display(value: number | null, type: DisplayType) {
   if (value == null) return '—'
   if (type === 'count') return Math.round(value).toLocaleString()
   if (type === 'percent') return `${value.toFixed(1)}%`
@@ -16,17 +19,17 @@ function display(value: number | null, type: 'count' | 'percent' | 'ratio' | 'z'
 }
 
 export default function PeerCharacteristics({ target, peers, benchmark }: { target: School; peers: School[]; benchmark: BenchmarkKey }) {
-  const rows = [
-    { label: 'Grades 9–12 enrollment', target: target.structure.enrollment912, peers: median(peers.map((s) => s.structure.enrollment912)), type: 'count' as const },
-    { label: 'FRPL', target: target.structure.frplPct, peers: median(peers.map((s) => s.structure.frplPct)), type: 'percent' as const },
-    { label: 'Hispanic share', target: target.structure.hispanicPct, peers: median(peers.map((s) => s.structure.hispanicPct)), type: 'percent' as const },
-    { label: 'Black share', target: target.structure.blackPct, peers: median(peers.map((s) => s.structure.blackPct)), type: 'percent' as const },
-    { label: 'Asian share', target: target.structure.asianPct, peers: median(peers.map((s) => s.structure.asianPct)), type: 'percent' as const },
-    { label: 'Student–teacher ratio', target: target.structure.studentTeacherRatio, peers: median(peers.map((s) => s.structure.studentTeacherRatio)), type: 'ratio' as const },
+  const rows: CharacteristicRow[] = [
+    { label: 'Grades 9–12 enrollment', target: target.structure.enrollment912, peers: median(peers.map((s) => s.structure.enrollment912)), type: 'count' },
+    { label: 'FRPL', target: target.structure.frplPct, peers: median(peers.map((s) => s.structure.frplPct)), type: 'percent' },
+    { label: 'Hispanic share', target: target.structure.hispanicPct, peers: median(peers.map((s) => s.structure.hispanicPct)), type: 'percent' },
+    { label: 'Black share', target: target.structure.blackPct, peers: median(peers.map((s) => s.structure.blackPct)), type: 'percent' },
+    { label: 'Asian share', target: target.structure.asianPct, peers: median(peers.map((s) => s.structure.asianPct)), type: 'percent' },
+    { label: 'Student–teacher ratio', target: target.structure.studentTeacherRatio, peers: median(peers.map((s) => s.structure.studentTeacherRatio)), type: 'ratio' },
   ]
 
   if (benchmark === 'stateReadiness') {
-    rows.push({ label: 'State readiness z', target: target.readiness.stateZ, peers: median(peers.map((s) => s.readiness.stateZ)), type: 'z' as const })
+    rows.push({ label: 'State readiness z', target: target.readiness.stateZ, peers: median(peers.map((s) => s.readiness.stateZ)), type: 'z' })
   }
 
   return <section className="panel characteristics">
