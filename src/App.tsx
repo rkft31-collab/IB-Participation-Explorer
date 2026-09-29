@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadDashboardCore, loadPeerLinks } from './data'
 import { formatGap, formatPct, formatStudents } from './format'
+import BenchmarkComparison from './BenchmarkComparison'
+import PeerCharacteristics from './PeerCharacteristics'
+import PeerMap from './PeerMap'
 import type { BenchmarkData, BenchmarkKey, PeerLinkMap, School, StateOption } from './types'
 import './styles.css'
+import './extras.css'
 
 const ALL = 'ALL'
 const LABELS: Record<BenchmarkKey, string> = {
@@ -114,6 +118,7 @@ export default function App() {
   }, [school, benchmark, benchmarkKey, peerMaps])
 
   const peers = usePeers(peerMaps[benchmarkKey], schoolId)
+  const peerSchools = peers.map((peer) => schoolById.get(peer.peerId)).filter((s): s is School => Boolean(s))
   const filteredSchools = useMemo(() => {
     const normalized = query.trim().toLowerCase()
     return schools.filter((s) => selectedState === ALL || s.state === selectedState)
@@ -181,9 +186,14 @@ export default function App() {
             return <tr key={peer.peerId}><td>{peer.rank}</td><td><button className="linkButton" onClick={() => peerSchool && chooseSchool(peerSchool, true)}>{peer.peerName}</button></td><td>{peer.peerState}</td><td>{formatPct(peer.ibPct)}</td><td>{peerSchool?.structure.enrollment912.toLocaleString() ?? '—'}</td><td>{formatPct(peerSchool?.structure.frplPct)}</td><td>{peer.distance.toFixed(2)}</td></tr>
           })}</tbody></table></div>
         </section>
+        <div className="twoCol"><PeerMap target={school} peers={peers as any} schoolById={schoolById} /><PeerCharacteristics target={school} peers={peerSchools} benchmark={benchmarkKey} /></div>
       </> : <section className="panel loadingPeers">Loading the 10-peer comparison set…</section>}
 
+      <BenchmarkComparison school={school} />
+
       <section className="interpret"><h3>What does this comparison suggest?</h3><p>{(benchmark.gapPp ?? 0) > 0 ? `${school.name}'s IB participation is ${(benchmark.gapPp ?? 0).toFixed(1)} percentage points below the peer-achievable P75 for this ${LABELS[benchmarkKey].toLowerCase()} comparison set.` : `${school.name}'s IB participation meets or exceeds the peer-achievable P75 for this ${LABELS[benchmarkKey].toLowerCase()} comparison set.`}</p><p className="method">P75 describes participation already demonstrated by the stronger-performing portion of comparable programs. It is not a causal capacity estimate, forecast, or required participation level.</p></section>
+
+      <details className="methodology"><summary>How are peers selected?</summary><div><p><strong>National Structural:</strong> 10 nearest eligible IB peers using exact charter status, adaptive broad grade configuration, standardized school size, FRPL, Hispanic share, Black share, Asian share, student–teacher ratio, and a soft broad-locale mismatch penalty.</p><p><strong>State + Readiness:</strong> the same structural logic within state, adding state-relative academic readiness as a seventh distance dimension. The benchmark is not shown when fewer than 10 eligible exact-charter references remain.</p><p><strong>Common Assessment:</strong> retained ACT/SAT-family analogs where a defensible common assessment framework is available.</p><p><strong>P75:</strong> the 75th percentile of the 10 peer participation rates. It is an empirical upper-quartile benchmark, not a claim that 75% of students should participate.</p></div></details>
     </>}</div>
     <footer className="shell footer">Frozen research prototype · IB Participation analysis · 2026</footer>
   </main>
