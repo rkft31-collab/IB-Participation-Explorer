@@ -11,10 +11,10 @@ export default function BenchmarkComparison({ school }: { school: School }) {
   if (available.length < 2) return null
 
   return <section className="panel benchmarkCompare">
-    <div className="sectionHead"><div><p className="eyebrow">Cross-benchmark view</p><h3>How does the conclusion change?</h3></div><p>Each row is a separate estimand; they are not averaged.</p></div>
-    <div className="tableWrap"><table><thead><tr><th>Benchmark</th><th>Observed</th><th>Peer P75</th><th>Gap</th></tr></thead><tbody>
+    <div className="sectionHead"><div><p className="eyebrow">Cross-benchmark view</p><h3>How does the conclusion change?</h3></div><p>Each row is a separate comparison; they are not averaged.</p></div>
+    <div className="tableWrap"><table><thead><tr><th>Benchmark</th><th>Observed</th><th>Upper-peer benchmark</th><th>Gap</th></tr></thead><tbody>
       {available.map(([label, b]) => <tr key={label}><td><strong>{label}</strong></td><td>{formatPct(school.ib.observedPct)}</td><td>{formatPct(b.peerP75Pct)}</td><td>{formatGap(b.gapPp)}</td></tr>)}
     </tbody></table></div>
-    <p className="method">Differences across rows show sensitivity to how “peer” is defined: national structure, state-local structure plus readiness, or a retained common-assessment analog.</p>
+    <p className="method">Differences across rows show how the comparison changes when “peer” is defined differently: national structure, state-local structure plus readiness, or a retained common-assessment analog.</p>
   </section>
 }
