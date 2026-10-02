@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadDashboardCore, loadPeerLinks } from './data'
+import type { DpAgeEnrollmentMap } from './data'
 import { formatGap, formatPct, formatStudents } from './format'
 import BenchmarkComparison from './BenchmarkComparison'
 import PeerCharacteristics from './PeerCharacteristics'
@@ -82,6 +83,7 @@ export default function App() {
   const initial = useRef(readQuery()).current
   const [schools, setSchools] = useState<School[]>([])
   const [states, setStates] = useState<StateOption[]>([])
+  const [dpAgeEnrollments, setDpAgeEnrollments] = useState<DpAgeEnrollmentMap>({})
   const [selectedState, setSelectedState] = useState(ALL)
   const [query, setQuery] = useState('')
   const [schoolId, setSchoolId] = useState(initial.schoolId)
@@ -92,9 +94,10 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    loadDashboardCore().then(({ schools: schoolRows, states: stateRows }) => {
+    loadDashboardCore().then(({ schools: schoolRows, states: stateRows, dpAgeEnrollment }) => {
       setSchools(schoolRows)
       setStates(stateRows)
+      setDpAgeEnrollments(dpAgeEnrollment)
       const selected = schoolRows.find((s) => s.id === initial.schoolId)
       if (selected) {
         setSelectedState(selected.state)
@@ -110,6 +113,11 @@ export default function App() {
   const school = useMemo(() => schools.find((s) => s.id === schoolId) ?? null, [schools, schoolId])
   const schoolById = useMemo(() => new Map(schools.map((s) => [s.id, s])), [schools])
   const benchmark = school?.benchmarks[benchmarkKey] ?? null
+  const dpAgeEnrollment = school ? dpAgeEnrollments[school.id] ?? null : null
+  const dpAgePct = school && school.ib.enrollment != null && dpAgeEnrollment && dpAgeEnrollment > 0
+    ? (school.ib.enrollment / dpAgeEnrollment) * 100
+    : null
+  const dpAgeProxyAvailable = dpAgePct != null && dpAgePct >= 0 && dpAgePct <= 100
 
   useEffect(() => {
     if (!school || !benchmark?.available || peerMaps[benchmarkKey]) return
@@ -170,7 +178,7 @@ export default function App() {
       <div className="viewIntro"><p><strong>{LABELS[benchmarkKey]}:</strong> {benchmarkDescription(benchmarkKey)}</p>{benchmarkKey === 'stateReadiness' && benchmark.supportFlag && <p className="supportNotice"><strong>Support note:</strong> {benchmark.supportFlag.replaceAll('_', ' ')}.</p>}{benchmarkKey === 'commonAssessment' && benchmark.note && <p className="supportNotice">{benchmark.note}</p>}</div>
 
       <section className="cards" aria-label={`${LABELS[benchmarkKey]} benchmark snapshot`}>
-        <article><span>Current IB participation</span><strong>{formatPct(school.ib.observedPct)}</strong><small>Observed share of grades 9–12 enrollment</small></article>
+        <article className="participationCard"><span>Reported IB participation</span><strong>{formatPct(school.ib.observedPct)}</strong><small>CRDC-reported DP enrollment as a share of grades 9–12 enrollment</small><div className="proxyMetric"><span>Among DP-age students <b>proxy</b></span><strong>{dpAgeProxyAvailable ? formatPct(dpAgePct) : 'Not shown'}</strong><small>{dpAgeProxyAvailable ? `Same reported DP enrollment divided by grades 11–12 enrollment (${dpAgeEnrollment?.toLocaleString()} students)` : 'The grades 11–12 proxy is suppressed because the available federal counts would produce an implausible or unusable rate.'}</small></div></article>
         <article><span>Peer median</span><strong>{formatPct(benchmark.peerMedianPct)}</strong><small>Middle of this 10-peer participation distribution</small></article>
         <article><span>Peer-achievable P75</span><strong>{formatPct(benchmark.peerP75Pct)}</strong><small>Upper-quartile threshold among these peers</small></article>
         <article><span>Gap to P75</span><strong>{formatGap(benchmark.gapPp)}</strong><small>{(benchmark.gapPp ?? 0) > 0 ? 'Positive means participation is below P75' : 'This school meets or exceeds P75'}</small></article>
@@ -193,7 +201,7 @@ export default function App() {
 
       <section className="interpret"><h3>What does this comparison suggest?</h3><p>{(benchmark.gapPp ?? 0) > 0 ? `${school.name}'s IB participation is ${(benchmark.gapPp ?? 0).toFixed(1)} percentage points below the peer-achievable P75 for this ${LABELS[benchmarkKey].toLowerCase()} comparison set.` : `${school.name}'s IB participation meets or exceeds the peer-achievable P75 for this ${LABELS[benchmarkKey].toLowerCase()} comparison set.`}</p><p className="method">P75 describes participation already demonstrated by the stronger-performing portion of comparable programs. It is not a causal capacity estimate, forecast, or required participation level.</p></section>
 
-      <details className="methodology"><summary>How are peers selected?</summary><div><p><strong>National Structural:</strong> 10 nearest eligible IB peers using exact charter status, adaptive broad grade configuration, standardized school size, FRPL, Hispanic share, Black share, Asian share, student–teacher ratio, and a soft broad-locale mismatch penalty.</p><p><strong>State + Readiness:</strong> the same structural logic within state, adding state-relative academic readiness as a seventh distance dimension. The benchmark is not shown when fewer than 10 eligible exact-charter references remain.</p><p><strong>Common Assessment:</strong> retained ACT/SAT-family analogs where a defensible common assessment framework is available.</p><p><strong>P75:</strong> the 75th percentile of the 10 peer participation rates. It is an empirical upper-quartile benchmark, not a claim that 75% of students should participate.</p></div></details>
+      <details className="methodology"><summary>How are peers selected?</summary><div><p><strong>National Structural:</strong> 10 nearest eligible IB peers using exact charter status, adaptive broad grade configuration, standardized school size, FRPL, Hispanic share, Black share, Asian share, student–teacher ratio, and a soft broad-locale mismatch penalty.</p><p><strong>State + Readiness:</strong> the same structural logic within state, adding state-relative academic readiness as a seventh distance dimension. The benchmark is not shown when fewer than 10 eligible exact-charter references remain.</p><p><strong>Common Assessment:</strong> retained ACT/SAT-family analogs where a defensible common assessment framework is available.</p><p><strong>DP-age proxy:</strong> a secondary descriptive measure using the same CRDC-reported DP enrollment numerator divided by CCD grades 11–12 enrollment. It is shown only when the resulting value is between 0% and 100%; otherwise it is suppressed because CRDC does not provide grade-specific DP enrollment.</p><p><strong>P75:</strong> the 75th percentile of the 10 peer participation rates. It is an empirical upper-quartile benchmark, not a claim that 75% of students should participate.</p></div></details>
     </>}</div>
     <footer className="shell footer">Frozen research prototype · IB Participation analysis · 2026</footer>
   </main>
