@@ -8,8 +8,11 @@ async function loadJson<T>(name: string): Promise<T> {
   return response.json() as Promise<T>
 }
 
+export type DpAgeEnrollmentMap = Record<string, number | null>
+
 let schoolsPromise: Promise<School[]> | undefined
 let statesPromise: Promise<StateOption[]> | undefined
+let dpAgeEnrollmentPromise: Promise<DpAgeEnrollmentMap> | undefined
 const peerPromises = new Map<BenchmarkKey, Promise<PeerLinkMap>>()
 
 export function loadSchools(): Promise<School[]> {
@@ -20,6 +23,11 @@ export function loadSchools(): Promise<School[]> {
 export function loadStates(): Promise<StateOption[]> {
   statesPromise ??= loadJson<StateOption[]>('states.json')
   return statesPromise
+}
+
+export function loadDpAgeEnrollment(): Promise<DpAgeEnrollmentMap> {
+  dpAgeEnrollmentPromise ??= loadJson<DpAgeEnrollmentMap>('dp-age-enrollment.json')
+  return dpAgeEnrollmentPromise
 }
 
 export function loadPeerLinks(view: BenchmarkKey): Promise<PeerLinkMap> {
@@ -36,6 +44,6 @@ export function loadPeerLinks(view: BenchmarkKey): Promise<PeerLinkMap> {
 }
 
 export async function loadDashboardCore() {
-  const [schools, states] = await Promise.all([loadSchools(), loadStates()])
-  return { schools, states }
+  const [schools, states, dpAgeEnrollment] = await Promise.all([loadSchools(), loadStates(), loadDpAgeEnrollment()])
+  return { schools, states, dpAgeEnrollment }
 }
