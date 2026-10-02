@@ -9,7 +9,8 @@ async function loadJson<T>(name: string): Promise<T> {
 }
 
 export type DpAgeEnrollmentMap = Record<string, number | null>
-export type IbDemographicCounts = Record<string, [number | null, number | null]>
+export type IbDemographicRow = [number | null, number | null, number | null, number | null, number | null, number | null]
+export type IbDemographicCounts = Record<string, IbDemographicRow>
 
 let schoolsPromise: Promise<School[]> | undefined
 let statesPromise: Promise<StateOption[]> | undefined
@@ -33,7 +34,18 @@ export function loadDpAgeEnrollment(): Promise<DpAgeEnrollmentMap> {
 }
 
 export function loadIbDemographics(): Promise<IbDemographicCounts> {
-  ibDemographicsPromise ??= loadJson<IbDemographicCounts>('ib-demographics.json').catch(() => ({}))
+  if (!ibDemographicsPromise) {
+    const files = [
+      'ib-demographics-0.json',
+      'ib-demographics-1.json',
+      'ib-demographics-2.json',
+      'ib-demographics-3.json',
+      'ib-demographics-4a.json',
+      'ib-demographics-4b.json',
+    ]
+    ibDemographicsPromise = Promise.all(files.map((name) => loadJson<IbDemographicCounts>(name)))
+      .then((parts) => Object.assign({}, ...parts))
+  }
   return ibDemographicsPromise
 }
 
