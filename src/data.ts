@@ -9,10 +9,12 @@ async function loadJson<T>(name: string): Promise<T> {
 }
 
 export type DpAgeEnrollmentMap = Record<string, number | null>
+export type IbDemographicCounts = Record<string, [number | null, number | null]>
 
 let schoolsPromise: Promise<School[]> | undefined
 let statesPromise: Promise<StateOption[]> | undefined
 let dpAgeEnrollmentPromise: Promise<DpAgeEnrollmentMap> | undefined
+let ibDemographicsPromise: Promise<IbDemographicCounts> | undefined
 const peerPromises = new Map<BenchmarkKey, Promise<PeerLinkMap>>()
 
 export function loadSchools(): Promise<School[]> {
@@ -30,6 +32,11 @@ export function loadDpAgeEnrollment(): Promise<DpAgeEnrollmentMap> {
   return dpAgeEnrollmentPromise
 }
 
+export function loadIbDemographics(): Promise<IbDemographicCounts> {
+  ibDemographicsPromise ??= loadJson<IbDemographicCounts>('ib-demographics.json').catch(() => ({}))
+  return ibDemographicsPromise
+}
+
 export function loadPeerLinks(view: BenchmarkKey): Promise<PeerLinkMap> {
   const existing = peerPromises.get(view)
   if (existing) return existing
@@ -44,6 +51,6 @@ export function loadPeerLinks(view: BenchmarkKey): Promise<PeerLinkMap> {
 }
 
 export async function loadDashboardCore() {
-  const [schools, states, dpAgeEnrollment] = await Promise.all([loadSchools(), loadStates(), loadDpAgeEnrollment()])
-  return { schools, states, dpAgeEnrollment }
+  const [schools, states, dpAgeEnrollment, ibDemographics] = await Promise.all([loadSchools(), loadStates(), loadDpAgeEnrollment(), loadIbDemographics()])
+  return { schools, states, dpAgeEnrollment, ibDemographics }
 }
