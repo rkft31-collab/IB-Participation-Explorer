@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { loadDashboardCore, loadPeerLinks } from './data'
-import type { DpAgeEnrollmentMap } from './data'
+import type { DpAgeEnrollmentMap, IbDemographicCounts } from './data'
 import { formatGap, formatPct, formatStudents } from './format'
 import BenchmarkComparison from './BenchmarkComparison'
+import DemographicsPanel from './DemographicsPanel'
 import PeerCharacteristics from './PeerCharacteristics'
 import PeerMap from './PeerMap'
 import type { BenchmarkData, BenchmarkKey, PeerLinkMap, School, StateOption } from './types'
@@ -84,6 +85,7 @@ export default function App() {
   const [schools, setSchools] = useState<School[]>([])
   const [states, setStates] = useState<StateOption[]>([])
   const [dpAgeEnrollments, setDpAgeEnrollments] = useState<DpAgeEnrollmentMap>({})
+  const [ibDemographics, setIbDemographics] = useState<IbDemographicCounts>({})
   const [selectedState, setSelectedState] = useState(ALL)
   const [query, setQuery] = useState('')
   const [schoolId, setSchoolId] = useState(initial.schoolId)
@@ -94,10 +96,11 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    loadDashboardCore().then(({ schools: schoolRows, states: stateRows, dpAgeEnrollment }) => {
+    loadDashboardCore().then(({ schools: schoolRows, states: stateRows, dpAgeEnrollment, ibDemographics: demographicRows }) => {
       setSchools(schoolRows)
       setStates(stateRows)
       setDpAgeEnrollments(dpAgeEnrollment)
+      setIbDemographics(demographicRows)
       const selected = schoolRows.find((s) => s.id === initial.schoolId)
       if (selected) {
         setSelectedState(selected.state)
@@ -185,6 +188,8 @@ export default function App() {
       </section>
 
       <section className="equiv"><div><p className="eyebrow">Equivalent participation gap</p><strong>{formatStudents(benchmark.equivalentGapStudents)}</strong></div><p>This translates the positive observed-to-P75 difference into students using the school's grades 9–12 enrollment ({school.structure.enrollment912.toLocaleString()}). It is a descriptive comparison, not a forecast of future enrollment.</p></section>
+
+      <DemographicsPanel school={school} data={ibDemographics[school.id]} />
 
       {peers.length === 10 ? <>
         <PeerPlot school={school} peers={peers} benchmark={benchmark} />
