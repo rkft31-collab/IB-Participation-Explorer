@@ -22,7 +22,7 @@ function readQuery() {
   const params = new URLSearchParams(window.location.search)
   const candidate = params.get('benchmark')
   const benchmark: BenchmarkKey = candidate === 'stateReadiness' || candidate === 'commonAssessment' ? candidate : 'national'
-  const mode = params.get('mode') === 'potential' ? 'potential' : 'existing'
+  const mode: 'existing' | 'potential' = params.get('mode') === 'potential' ? 'potential' : 'existing'
   return { schoolId: params.get('school') ?? '', benchmark, mode }
 }
 
