@@ -12,15 +12,10 @@ type NonIbRow = [
 type NonIbData = { s: string[]; r: NonIbRow[] }
 
 const dataPath = (name:string) => `${import.meta.env.BASE_URL}data/nonib/${name}`
-const CHUNK_COUNT = 50
-
 async function loadPotentialData(): Promise<NonIbData> {
-  const parts = await Promise.all(Array.from({length: CHUNK_COUNT}, async (_,i) => {
-    const r = await fetch(dataPath(`part-${String(i).padStart(2,'0')}.txt`))
-    if (!r.ok) throw new Error('Unable to load potential-program data.')
-    return r.text()
-  }))
-  const b64 = parts.join('')
+  const r = await fetch(dataPath('nonib-schools.b64.txt'))
+  if (!r.ok) throw new Error('Unable to load potential-program data.')
+  const b64 = await r.text()
   const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0))
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))
   const text = await new Response(stream).text()
@@ -38,7 +33,15 @@ export default function PotentialExplorer({ ibSchools, onExistingMode }:{ ibScho
   const [selected,setSelected] = useState<NonIbRow|null>(null)
   const [open,setOpen] = useState(false)
 
-  useEffect(()=>{ loadPotentialData().then(setData).catch(e=>setError(e instanceof Error?e.message:'Unable to load data.')) },[])
+  useEffect(()=>{ loadPotentialData().then((loaded)=> {
+    setData(loaded)
+    const params = new URLSearchParams(window.location.search)
+    const requested = params.get('mode') === 'potential' ? params.get('school') : null
+    if (requested) {
+      const found = loaded.r.find(r => r[0] === requested)
+      if (found) { setSelected(found); setState(found[1]); setQuery(found[3]) }
+    }
+  }).catch(e=>setError(e instanceof Error?e.message:'Unable to load data.')) },[])
 
   const peerById = useMemo(()=>new Map(ibSchools.map(s=>[s.id,s])),[ibSchools])
   const stateOptions = useMemo(()=>{
@@ -67,7 +70,7 @@ export default function PotentialExplorer({ ibSchools, onExistingMode }:{ ibScho
 
   function choose(r:NonIbRow){
     setSelected(r); setState(r[1]); setQuery(r[3]); setOpen(false)
-    const u=new URL(window.location.href);u.searchParams.set('mode','potential');u.searchParams.set('school',r[0]);window.history.pushState({},'',u)
+    const u=new URL(window.location.href);u.search='';u.searchParams.set('mode','potential');u.searchParams.set('school',r[0]);window.history.pushState({},'',u)
     window.scrollTo({top:300,behavior:'smooth'})
   }
 
