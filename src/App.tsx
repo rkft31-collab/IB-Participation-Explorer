@@ -6,6 +6,7 @@ import BenchmarkComparison from './BenchmarkComparison'
 import DemographicsPanel from './DemographicsPanel'
 import PeerCharacteristics from './PeerCharacteristics'
 import PeerMap from './PeerMap'
+import PotentialExplorer from './PotentialExplorer'
 import type { BenchmarkData, BenchmarkKey, PeerLinkMap, School, StateOption } from './types'
 import './styles.css'
 import './extras.css'
@@ -21,7 +22,8 @@ function readQuery() {
   const params = new URLSearchParams(window.location.search)
   const candidate = params.get('benchmark')
   const benchmark: BenchmarkKey = candidate === 'stateReadiness' || candidate === 'commonAssessment' ? candidate : 'national'
-  return { schoolId: params.get('school') ?? '', benchmark }
+  const mode = params.get('mode') === 'potential' ? 'potential' : 'existing'
+  return { schoolId: params.get('school') ?? '', benchmark, mode }
 }
 
 function writeQuery(schoolId: string, benchmark: BenchmarkKey, replace = false) {
@@ -83,6 +85,7 @@ function usePeers(map: PeerLinkMap | undefined, schoolId: string): PeerRows { re
 export default function App() {
   const initial = useRef(readQuery()).current
   const [schools, setSchools] = useState<School[]>([])
+  const [mode, setMode] = useState<'existing' | 'potential'>(initial.mode)
   const [states, setStates] = useState<StateOption[]>([])
   const [dpAgeEnrollments, setDpAgeEnrollments] = useState<DpAgeEnrollmentMap>({})
   const [ibDemographics, setIbDemographics] = useState<IbDemographicCounts>({})
@@ -156,14 +159,37 @@ export default function App() {
     writeQuery(school.id, next)
   }
 
-  if (loading) return <main className="shell status">Loading the 950-school research dataset…</main>
+  if (loading) return <main className="shell status">Loading the IB Participation research dataset…</main>
   if (error) return <main className="shell status error"><strong>Dashboard data could not load.</strong><br />{error}</main>
+
+  function switchToExisting() {
+    setMode('existing')
+    setSchoolId('')
+    setSelectedState(ALL)
+    setQuery('')
+    setBenchmarkKey('national')
+    const params = new URLSearchParams()
+    params.set('benchmark', 'national')
+    window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function switchToPotential() {
+    setMode('potential')
+    const params = new URLSearchParams()
+    params.set('mode', 'potential')
+    window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  if (mode === 'potential') return <PotentialExplorer ibSchools={schools} onExistingMode={switchToExisting} />
 
   return <main>
     <header className="hero"><div className="shell heroInner">
       <p className="eyebrow">Research prototype · existing IB Diploma Programme schools</p>
       <h1>IB Participation Explorer</h1>
       <p className="dek">Compare an IB school's participation with levels already demonstrated by comparable IB programs.</p>
+      <div className="modeSwitch"><button className="active">Existing IB programs</button><button onClick={switchToPotential}>Potential IB programs</button></div>
       <section className="finder" aria-label="Find an IB school">
         <label><span>State</span><select value={selectedState} onChange={(e) => { const nextState = e.target.value; setSelectedState(nextState); setQuery(''); setSchoolId(''); setBenchmarkKey('national'); setOpenResults(true); writeQuery('', 'national', true) }}><option value={ALL}>All states</option>{states.map((s) => <option key={s.state} value={s.state}>{s.stateName} ({s.schoolCount})</option>)}</select></label>
         <label className="schoolSearch"><span>School</span><input value={query} onFocus={(e) => { setOpenResults(true); if (school && query === school.name) e.currentTarget.select() }} onChange={(e) => { setQuery(e.target.value); setOpenResults(true) }} placeholder="Search school, district, or city" aria-controls="school-results" />{openResults && <div className="results" id="school-results" role="listbox">{filteredSchools.length ? filteredSchools.map((s) => <button key={s.id} role="option" onClick={() => chooseSchool(s)}><strong>{s.name}</strong><span>{s.city}, {s.state} · {s.district}</span></button>) : <p>No matching IB schools.</p>}</div>}</label>
